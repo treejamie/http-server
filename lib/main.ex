@@ -9,11 +9,34 @@ defmodule Server do
 
   def listen() do
     {:ok, socket} = :gen_tcp.listen(4221, [:binary, active: false, reuseaddr: true])
+    loop(socket)
+  end
 
-    with {:ok, client} <- :gen_tcp.accept(socket) do
-      :gen_tcp.send(client, "HTTP/1.1 200 OK\r\n\r\n")
+  defp loop(socket) do
+    with {:ok, client} <- :gen_tcp.accept(socket),
+         {:ok, request} = :gen_tcp.recv(client, 0) do
+      Logger.debug("#{inspect(request)}")
+      response = response(request)
+
+      :gen_tcp.send(client, response)
+      :gen_tcp.close(client)
     else
-      err -> err
+      {:error, error} -> Logger.error("loop error: #{inspect(error)}")
+    end
+
+    loop(socket)
+  end
+
+  defp response(request) do
+    # Split into lines first
+    [request_line | _header_lines] = String.split(request, "\r\n", trim: true)
+
+    # Then split the request line on spaces
+    [_method, path, _version] = String.split(request_line, " ")
+
+    case path do
+      "/" -> "HTTP/1.1 200 OK\r\n\r\n"
+      _ -> "HTTP/1.1 404 Not Found\r\n\r\n"
     end
   end
 
