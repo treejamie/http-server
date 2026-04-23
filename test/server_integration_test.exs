@@ -12,6 +12,17 @@ defmodule Server.IntegrationTest do
   end
 
   describe "integration tests" do
+    test "handles concurrent connections" do
+      tasks =
+        for _ <- 1..20 do
+          Task.async(fn -> request("GET /echo/hello HTTP/1.1\r\nHost: localhost\r\n\r\n") end)
+        end
+
+      results = Task.await_many(tasks)
+
+      assert Enum.all?(results, fn r -> r =~ "HTTP/1.1 200" end)
+    end
+
     test "GET /user-agent returns the correct user agent" do
       request =
         "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foobar/1.2.3\r\nAccept: */*\r\n\r\n"

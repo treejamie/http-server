@@ -13,9 +13,16 @@ defmodule Server do
   end
 
   defp loop(socket) do
+    {:ok, client_socket} = :gen_tcp.accept(socket)
+    # this is what gets us the concurrency
+    Task.start(fn -> handle_client(client_socket) end)
+    # and finally, tail recurse.
+    loop(socket)
+  end
+
+  defp handle_client(client_socket) do
     # this is the boundary - naive assumption checks of a perfect world.
-    with {:ok, client_socket} <- :gen_tcp.accept(socket),
-         {:ok, request} = :gen_tcp.recv(client_socket, 0) do
+    with {:ok, request} <- :gen_tcp.recv(client_socket, 0) do
       # logging - becasue reasons
       Logger.debug("#{inspect(request)}")
 
@@ -31,9 +38,6 @@ defmodule Server do
     else
       {:error, error} -> Logger.error("loop error: #{inspect(error)}")
     end
-
-    # and finally, tail recurse.
-    loop(socket)
   end
 
   defp reply(response, client_socket) do
