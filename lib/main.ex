@@ -13,31 +13,33 @@ defmodule Server do
   end
 
   defp loop(socket) do
-    with {:ok, client} <- :gen_tcp.accept(socket),
-         {:ok, request} = :gen_tcp.recv(client, 0) do
+    # this is the boundary - naive assumption checks of a perfect world.
+    with {:ok, client_socket} <- :gen_tcp.accept(socket),
+         {:ok, request} = :gen_tcp.recv(client_socket, 0) do
+      # logging - becasue reasons
       Logger.debug("#{inspect(request)}")
-      response = response(request)
 
-      :gen_tcp.send(client, response)
-      :gen_tcp.close(client)
+      # Construct, reduce, convert
+      # construct
+      request
+      # reduce
+      |> Server.Handler.handle()
+      # convert
+      |> to_string()
+      # send it
+      |> reply(client_socket)
     else
       {:error, error} -> Logger.error("loop error: #{inspect(error)}")
     end
 
+    # and finally, tail recurse.
     loop(socket)
   end
 
-  defp response(request) do
-    # Split into lines first
-    [request_line | _header_lines] = String.split(request, "\r\n", trim: true)
-
-    # Then split the request line on spaces
-    [_method, path, _version] = String.split(request_line, " ")
-
-    case path do
-      "/" -> "HTTP/1.1 200 OK\r\n\r\n"
-      _ -> "HTTP/1.1 404 Not Found\r\n\r\n"
-    end
+  defp reply(response, client_socket) do
+    # for now we blockand do one response at a time, return that response
+    :gen_tcp.send(client_socket, response)
+    :gen_tcp.close(client_socket)
   end
 
   def main(_args) do
