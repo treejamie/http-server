@@ -3,6 +3,7 @@ defmodule Server.Response do
             path: nil,
             params: %{},
             headers: %{},
+            content_length: nil,
             content_type: "text/plain",
             body: nil,
             status: nil
@@ -25,18 +26,12 @@ end
 
 defimpl String.Chars, for: Server.Response do
   def to_string(%Server.Response{} = r) do
-    body =
-      case r.body do
-        nil -> ""
-        body -> body
-      end
+    body = r.body || ""
 
-    """
-    HTTP/1.1 #{Server.Response.full_status(r)}\r
-    Content-Type: #{r.content_type}\r
-    Content-Length: #{String.length(body)}\r
-    \r
-    #{body}
-    """
+    "HTTP/1.1 #{Server.Response.full_status(r)}\r\n" <>
+      "Content-Type: #{r.content_type}\r\n" <>
+      "Content-Length: #{byte_size(body)}\r\n" <>
+      "\r\n" <>
+      body
   end
 end

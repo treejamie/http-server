@@ -11,7 +11,19 @@ defmodule Server.IntegrationTest do
     response
   end
 
-  describe "integration tests" do
+  describe "files" do
+    test "200 and a file when it exists" do
+      response =
+        request(
+          "GET /files/ham.jpeg HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n"
+        )
+
+      assert response =~ "HTTP/1.1 200"
+      assert response =~ "application/octet-stream"
+    end
+  end
+
+  describe "concurrency" do
     test "handles concurrent connections" do
       tasks =
         for _ <- 1..20 do
@@ -22,7 +34,9 @@ defmodule Server.IntegrationTest do
 
       assert Enum.all?(results, fn r -> r =~ "HTTP/1.1 200" end)
     end
+  end
 
+  describe "basics" do
     test "GET /user-agent returns the correct user agent" do
       request =
         "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foobar/1.2.3\r\nAccept: */*\r\n\r\n"

@@ -46,7 +46,14 @@ defmodule Server do
     :gen_tcp.close(client_socket)
   end
 
-  def main(_args) do
+  def main(args) do
+    # parse the args
+    {opts, _args, _invalid} = OptionParser.parse(args, strict: [directory: :string])
+    directory = Keyword.get(opts, :directory)
+
+    # set the config
+    Application.put_env(:codecrafters_http_server, :directory, directory)
+
     {:ok, _pid} = Application.ensure_all_started(:codecrafters_http_server)
     Process.sleep(:infinity)
   end
