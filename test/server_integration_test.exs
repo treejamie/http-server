@@ -11,22 +11,33 @@ defmodule Server.IntegrationTest do
     response
   end
 
-  test "GET / returns 200 status" do
-    response = request("GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n")
-    assert response =~ "HTTP/1.1 200"
-  end
+  describe "integration tests" do
+    test "GET /user-agent returns the correct user agent" do
+      request =
+        "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foobar/1.2.3\r\nAccept: */*\r\n\r\n"
 
-  test "GET /echo/hello returns 200 with body" do
-    response = request("GET /echo/hello HTTP/1.1\r\nHost: localhost\r\n\r\n")
-    assert response =~ "HTTP/1.1 200"
-    assert response =~ "Content-Type: text/plain"
-    assert response =~ "hello"
-    assert response =~ "Content-Length: 5"
-  end
+      response = request(request)
+      assert response =~ "HTTP/1.1 200"
+      assert response =~ "foobar/1.2.3"
+    end
 
-  test "unknown route returns 404" do
-    response = request("GET /unknown HTTP/1.1\r\nHost: localhost\r\n\r\n")
-    assert response =~ "Content-Type: text/plain"
-    assert response =~ "HTTP/1.1 404"
+    test "GET / returns 200 status" do
+      response = request("GET / HTTP/1.1\r\nHost: localhost:4221\r\n\r\n")
+      assert response =~ "HTTP/1.1 200"
+    end
+
+    test "GET /echo/hello returns 200 with body" do
+      response = request("GET /echo/hello HTTP/1.1\r\nHost: localhost\r\n\r\n")
+      assert response =~ "HTTP/1.1 200"
+      assert response =~ "Content-Type: text/plain"
+      assert response =~ "hello"
+      assert response =~ "Content-Length: 5"
+    end
+
+    test "unknown route returns 404" do
+      response = request("GET /unknown HTTP/1.1\r\nHost: localhost\r\n\r\n")
+      assert response =~ "Content-Type: text/plain"
+      assert response =~ "HTTP/1.1 404"
+    end
   end
 end
