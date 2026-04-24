@@ -6,7 +6,8 @@ defmodule Server.Response do
             content_length: nil,
             content_type: "text/plain",
             body: nil,
-            status: nil
+            status: nil,
+            request_body: nil
 
   def full_status(%__MODULE__{} = response) do
     "#{response.status} #{status_reason(response.status)}"
@@ -19,6 +20,7 @@ defmodule Server.Response do
       401 => "Unauthorized",
       403 => "Forbidden",
       404 => "Not Found",
+      418 => "I'm a teapot",
       500 => "Internal Server Error"
     }[code]
   end

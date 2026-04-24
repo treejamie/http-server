@@ -1,40 +1,40 @@
 defmodule Server.Router do
   require Logger
   alias Server.Response
+  alias Server.Files
 
   def route(%Response{method: "GET", path: "/"} = response) do
     %{response | status: 200}
   end
 
-  def route(%Response{method: "GET", path: "/files/" <> file} = response) do
-    # TODO: harden against traversal attacks
-    full_path =
-      Path.join([
-        Application.get_env(:codecrafters_http_server, :directory),
-        file
-      ])
+  def route(%Response{method: "POST", path: "/files/" <> filename} = response) do
+    with :ok <- Files.write_file(filename, response.request_body) do
+      %{response | status: 201}
+    else
+      {:error, _} ->
+        %{response | status: 500}
+    end
+  end
 
+  def route(%Response{method: "GET", path: "/files/" <> filename} = response) do
     # now we are either 200 or 404
-    case File.exists?(full_path) do
-      false ->
-        content = "Not Found: #{file}"
+    with {:ok, content} <- Files.read_file(filename) do
+      %{
+        response
+        | body: content,
+          status: 200,
+          content_length: byte_size(content),
+          content_type: "application/octet-stream"
+      }
+    else
+      {:error, _} ->
+        content = "Not Found: #{filename}"
 
         %{
           response
           | body: content,
             status: 404,
             content_length: byte_size(content)
-        }
-
-      true ->
-        file = File.read!(full_path)
-
-        %{
-          response
-          | body: file,
-            status: 200,
-            content_length: byte_size(file),
-            content_type: "application/octet-stream"
         }
     end
   end

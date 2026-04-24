@@ -12,7 +12,16 @@ defmodule Server.IntegrationTest do
   end
 
   describe "files" do
-    test "200 and a file when it exists" do
+    test "POST with request body and we write a file" do
+      response =
+        request(
+          "POST /files/number HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\nContent-Type: application/octet-stream\r\nContent-Length: 5\r\n\r\n12345"
+        )
+
+      assert response =~ "HTTP/1.1 201"
+    end
+
+    test "GET 200 and a file when it exists" do
       response =
         request(
           "GET /files/ham.jpeg HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n"
