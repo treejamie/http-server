@@ -25,4 +25,8 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 app-*.tar
 
+# OS cruft
 .DS_Store
+
+# test artefacts
+data/number
