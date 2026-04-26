@@ -11,6 +11,17 @@ defmodule Server.IntegrationTest do
     response
   end
 
+  describe "headers" do
+    test "when accept-encoding is present, we send bacl Content-Encoding" do
+      response =
+        request(
+          "GET /echo/foo HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foo\r\nAccept: */*\r\nAccept-Encoding: gzip\r\n\r\n"
+        )
+
+      assert response =~ "Content-Encoding: gzip"
+    end
+  end
+
   describe "files" do
     test "POST with request body and we write a file" do
       response =
