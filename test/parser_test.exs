@@ -2,6 +2,14 @@ defmodule Server.ParserTest do
   use ExUnit.Case
 
   describe "parses compression headers" do
+    test "multiple compression headers maybe present, but we only accept valid ones" do
+      expected =
+        "GET /echo/foo HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foo\r\nAccept: */*\r\nAccept-Encoding: gzip, encoding-1, encoding-2, encoding-3\r\n\r\n"
+        |> Server.Parser.parse()
+
+      assert expected.headers["Content-Encoding"] == "gzip"
+    end
+
     test "when Accept-Encoding headers are present we send back Content-Encoding" do
       expected =
         "GET /echo/foo HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foo\r\nAccept: */*\r\nAccept-Encoding: gzip\r\n\r\n"

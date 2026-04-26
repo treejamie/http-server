@@ -12,7 +12,16 @@ defmodule Server.IntegrationTest do
   end
 
   describe "headers" do
-    test "when accept-encoding is present, we send bacl Content-Encoding" do
+    test "when accept-encoding is present as a series of comma seperate values, we send back a validContent-Encoding" do
+      response =
+        request(
+          "GET /echo/strawberry HTTP/1.1\r\nHost: localhost:4221\r\nAccept-Encoding: encoding-1, gzip, encoding-2\r\n\r\n"
+        )
+
+      assert response =~ "Content-Encoding: gzip"
+    end
+
+    test "when accept-encoding is present as a single item, we send back Content-Encoding" do
       response =
         request(
           "GET /echo/foo HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foo\r\nAccept: */*\r\nAccept-Encoding: gzip\r\n\r\n"

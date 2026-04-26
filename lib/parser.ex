@@ -32,8 +32,8 @@ defmodule Server.Parser do
       with [accept_header, accept_value] <- String.split(head, ": "),
            {res_header, res_value} <-
              header?(
-               String.downcase(accept_header),
-               String.downcase(accept_value)
+               accept_header |> String.downcase(),
+               accept_value |> String.downcase()
              ) do
         Map.put(headers, res_header, res_value)
       else
@@ -46,11 +46,22 @@ defmodule Server.Parser do
 
   defp parse_headers([], headers), do: headers
 
-  defp header?("accept-encoding", val) when val in @supported_encodings,
-    do: {"Content-Encoding", val}
+  # Accept-Encoding
+  # Could be a list of comma seperated values or a string
+  # so split it on commas and filter any unsupported values
+  defp header?("accept-encoding", value) do
+    value
+    |> String.split(",", trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.filter(fn value -> value in @supported_encodings end)
+    |> List.first()
+    |> case do
+      nil -> nil
+      val -> {"Content-Encoding", val}
+    end
+  end
 
-  defp header?("accept-encoding", _), do: nil
-
+  # I think this one has to stay as part of the codecrafters test suite
   defp header?("user-agent", ua), do: {"User-Agent", ua}
 
   defp header?(_, _), do: nil
