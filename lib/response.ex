@@ -13,6 +13,24 @@ defmodule Server.Response do
     "#{response.status} #{status_reason(response.status)}"
   end
 
+  def gzip?(%__MODULE__{} = response) do
+    case Map.get(response.headers, "Content-Encoding") do
+      "gzip" -> true
+      _ -> false
+    end
+  end
+
+  #
+  # TODO: if there's another conditional header, make a parent function
+  #       and make this private. Then chain all maybes together from
+  #       inside the parent function.
+  def maybe_content_encoding?(headers) do
+    case Map.get(headers, "Content-Encoding") do
+      nil -> ""
+      value -> "Content-Encoding: #{value}\r\n"
+    end
+  end
+
   defp status_reason(code) do
     %{
       200 => "OK",
@@ -27,22 +45,27 @@ defmodule Server.Response do
 end
 
 defimpl String.Chars, for: Server.Response do
-  def to_string(%Server.Response{} = r) do
-    body = r.body || ""
+  def get_body(response) do
+    # body could be nil, so defend against taht
+    body = response.body || ""
 
-    # this is getting a little hacky now...
-    "HTTP/1.1 #{Server.Response.full_status(r)}\r\n" <>
-      "Content-Type: #{r.content_type}\r\n" <>
-      maybe_content_encoding?(r.headers) <>
-      "Content-Length: #{byte_size(body)}\r\n" <>
-      "\r\n" <>
-      body
+    case Server.Response.gzip?(response) do
+      true -> :zlib.gzip(body)
+      false -> body
+    end
   end
 
-  def maybe_content_encoding?(headers) do
-    case Map.get(headers, "Content-Encoding") do
-      nil -> ""
-      value -> "Content-Encoding: #{value}\r\n"
-    end
+  def to_string(%Server.Response{} = response) do
+    # some parts needs to be calculated
+    body = get_body(response)
+    content_length = byte_size(body)
+
+    # now build the response...
+    "HTTP/1.1 #{Server.Response.full_status(response)}\r\n" <>
+      "Content-Type: #{response.content_type}\r\n" <>
+      Server.Response.maybe_content_encoding?(response.headers) <>
+      "Content-Length: #{content_length}\r\n" <>
+      "\r\n" <>
+      body
   end
 end

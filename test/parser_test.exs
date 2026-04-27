@@ -29,17 +29,15 @@ defmodule Server.ParserTest do
       assert expected.request_body == "12345"
     end
 
-    # test "parses headers correctly" do
-    #   expected =
-    #     "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foobar/1.2.3\r\nAccept: */*\r\n\r\n"
-    #     |> Server.Parser.parse()
+    test "parses headers correctly" do
+      expected =
+        "GET /user-agent HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foobar/1.2.3\r\nAccept: */*\r\n\r\n"
+        |> Server.Parser.parse()
 
-    #   assert expected.headers == %{
-    #            "Accept" => "*/*",
-    #            "Host" => "localhost:4221",
-    #            "User-Agent" => "foobar/1.2.3"
-    #          }
-    # end
+      assert expected.headers == %{
+               "User-Agent" => "foobar/1.2.3"
+             }
+    end
 
     test "parses a request string as expected" do
       expected =

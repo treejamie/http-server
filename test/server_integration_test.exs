@@ -12,6 +12,15 @@ defmodule Server.IntegrationTest do
   end
 
   describe "headers" do
+    test "when accept-encoding is present the body is gzipped " do
+      response =
+        request("GET /echo/foo HTTP/1.1\r\nHost: localhost:4221\r\nAccept-Encoding: gzip\r\n\r\n")
+
+      assert response =~
+               <<31, 139, 8, 0, 0, 0, 0, 0, 0, 19, 75, 203, 207, 7, 0, 33, 101, 115, 140, 3, 0, 0,
+                 0>>
+    end
+
     test "when accept-encoding is present as a series of comma seperate values, we send back a validContent-Encoding" do
       response =
         request(
@@ -21,7 +30,7 @@ defmodule Server.IntegrationTest do
       assert response =~ "Content-Encoding: gzip"
     end
 
-    test "when accept-encoding is present as a single item, we send back Content-Encoding" do
+    test "when accept-encoding is present as a single item, we send back a Content-Encoding header" do
       response =
         request(
           "GET /echo/foo HTTP/1.1\r\nHost: localhost:4221\r\nUser-Agent: foo\r\nAccept: */*\r\nAccept-Encoding: gzip\r\n\r\n"
