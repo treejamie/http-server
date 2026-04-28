@@ -26,24 +26,28 @@ defmodule Server do
       # logging - becasue reasons
       Logger.debug("#{inspect(request)}")
 
-      # Construct, reduce, convert
-      # construct
-      request
-      # reduce
-      |> Server.Handler.handle()
-      # convert
-      |> to_string()
-      # send it
-      |> reply(client_socket)
+      # make the respone
+      response = Server.Handler.handle(request)
+
+      # return the reply
+      reply(response, client_socket)
+
+      # now close or recurse
+      if response.close? do
+        :gen_tcp.close(client_socket)
+      else
+        handle_client(client_socket)
+      end
     else
+      {:error, :closed} -> :gen_tcp.close(client_socket)
       {:error, error} -> Logger.error("loop error: #{inspect(error)}")
     end
   end
 
   defp reply(response, client_socket) do
-    # for now we blockand do one response at a time, return that response
-    :gen_tcp.send(client_socket, response)
-    :gen_tcp.close(client_socket)
+    response
+    |> to_string()
+    |> then(fn response -> :gen_tcp.send(client_socket, response) end)
   end
 
   def main(args) do

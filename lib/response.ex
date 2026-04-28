@@ -5,6 +5,7 @@ defmodule Server.Response do
             headers: %{},
             content_length: nil,
             content_type: "text/plain",
+            close?: false,
             body: nil,
             status: nil,
             request_body: nil

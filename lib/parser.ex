@@ -15,54 +15,64 @@ defmodule Server.Parser do
     # finally, split the request line on spaces so we have our headers
     [method, path, _version] = String.split(request_line, " ")
 
-    # now parse those headers
-    headers = parse_headers(header_lines, %{})
-
-    # and return a response
+    # build a response from what we have
     %Response{
       method: method,
       path: path,
-      headers: headers,
+      close?: false,
       request_body: request_body
     }
+    # pipe that through the headers
+    |> parse_headers(header_lines)
   end
 
-  defp parse_headers([head | tail], headers) do
-    headers =
+  defp parse_headers(response, [head | tail]) do
+    response =
       with [accept_header, accept_value] <- String.split(head, ": "),
-           {res_header, res_value} <-
-             header?(
+           response <-
+             handle_header?(
+               response,
                accept_header |> String.downcase(),
                accept_value |> String.downcase()
              ) do
-        Map.put(headers, res_header, res_value)
+        response
       else
-        _ -> headers
+        _ -> response
       end
 
     # and now recurse
-    parse_headers(tail, headers)
+    parse_headers(response, tail)
   end
 
-  defp parse_headers([], headers), do: headers
+  defp parse_headers(response, []), do: response
 
   # Accept-Encoding
   # Could be a list of comma seperated values or a string
   # so split it on commas and filter any unsupported values
-  defp header?("accept-encoding", value) do
+  defp handle_header?(response, "accept-encoding", value) do
     value
     |> String.split(",", trim: true)
     |> Enum.map(&String.trim/1)
     |> Enum.filter(fn value -> value in @supported_encodings end)
     |> List.first()
     |> case do
-      nil -> nil
-      val -> {"Content-Encoding", val}
+      nil -> response
+      val -> put_in(response.headers["Content-Encoding"], val)
     end
   end
 
-  # I think this one has to stay as part of the codecrafters test suite
-  defp header?("user-agent", ua), do: {"User-Agent", ua}
+  # Connection: close
+  # HTTP connections are persistant by default but
+  # if a Connection: close header is present we will
+  # need to close the connection.
+  defp handle_header?(response, "connection", "close") do
+    %{response | close?: true}
+  end
 
-  defp header?(_, _), do: nil
+  # I think this one has to stay as part of the codecrafters test suite
+  defp handle_header?(response, "user-agent", ua) do
+    put_in(response.headers["User-Agent"], ua)
+  end
+
+  defp handle_header?(response, _, _), do: response
 end
