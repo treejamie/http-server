@@ -12,6 +12,15 @@ defmodule Server.IntegrationTest do
   end
 
   describe "headers" do
+    test "when connection close is present on the client we add it to the headers" do
+      response =
+        request(
+          "GET /echo/strawberry HTTP/1.1\r\nHost: localhost:4221\r\nConnection: close\r\n\r\n"
+        )
+
+      assert response =~ "Connection: close"
+    end
+
     test "when accept-encoding is present the body is gzipped " do
       response =
         request("GET /echo/foo HTTP/1.1\r\nHost: localhost:4221\r\nAccept-Encoding: gzip\r\n\r\n")

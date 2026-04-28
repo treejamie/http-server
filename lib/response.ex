@@ -21,10 +21,19 @@ defmodule Server.Response do
     end
   end
 
-  #
-  # TODO: if there's another conditional header, make a parent function
-  #       and make this private. Then chain all maybes together from
-  #       inside the parent function.
+  @doc """
+  If we need to close the connection. Send the header
+  """
+  def maybe_connection?(response) do
+    case response.close? do
+      true -> "Connection: close\r\n"
+      false -> ""
+    end
+  end
+
+  @doc """
+  If there's content encoding, show the header
+  """
   def maybe_content_encoding?(headers) do
     case Map.get(headers, "Content-Encoding") do
       nil -> ""
@@ -64,6 +73,7 @@ defimpl String.Chars, for: Server.Response do
     # now build the response...
     "HTTP/1.1 #{Server.Response.full_status(response)}\r\n" <>
       "Content-Type: #{response.content_type}\r\n" <>
+      Server.Response.maybe_connection?(response) <>
       Server.Response.maybe_content_encoding?(response.headers) <>
       "Content-Length: #{content_length}\r\n" <>
       "\r\n" <>

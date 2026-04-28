@@ -66,7 +66,9 @@ defmodule Server.Parser do
   # if a Connection: close header is present we will
   # need to close the connection.
   defp handle_header?(response, "connection", "close") do
-    %{response | close?: true}
+    response.headers["Connection"]
+    |> put_in("close")
+    |> Map.put(:close?, true)
   end
 
   # I think this one has to stay as part of the codecrafters test suite
