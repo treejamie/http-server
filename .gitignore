@@ -30,3 +30,6 @@ app-*.tar
 
 # test artefacts
 data/number
+
+# ignore claude
+.claude
