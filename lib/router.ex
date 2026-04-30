@@ -1,7 +1,15 @@
 defmodule Server.Router do
+  @moduledoc """
+  Maps http responses through defined routes.
+
+  There's a conflict in being the server and the application and having routes does
+  actually blur the line a little so consider this module as a very crude interface
+  to validate http behavior through integration tests.
+
+  """
   require Logger
-  alias Server.Response
   alias Server.Files
+  alias Server.Response
 
   def route(%Response{method: "GET", path: "/"} = response) do
     %{response | status: 200}
@@ -16,16 +24,17 @@ defmodule Server.Router do
 
   def route(%Response{method: "GET", path: "/files/" <> filename} = response) do
     # now we are either 200 or 404
-    with {:ok, content} <- Files.read_file(filename) do
-      %{
-        response
-        | body: content,
-          status: 200,
-          content_length: byte_size(content),
-          content_type: "application/octet-stream"
-      }
-    else
-      {:error, _} ->
+    case Files.read_file(filename) do
+      {:ok, content} ->
+        %{
+          response
+          | body: content,
+            status: 200,
+            content_length: byte_size(content),
+            content_type: "application/octet-stream"
+        }
+
+      _ ->
         content = "Not Found: #{filename}"
 
         %{

@@ -1,4 +1,7 @@
 defmodule Server.Parser do
+  @moduledoc """
+  Transforms a plain text HTTP request into a Response.
+  """
   alias Server.Response
 
   @supported_encodings [

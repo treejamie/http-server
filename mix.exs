@@ -14,6 +14,12 @@ defmodule App.MixProject do
     ]
   end
 
+  def cli do
+    [
+      preferred_envs: [check: :test]
+    ]
+  end
+
   defp aliases do
     [
       check: ["format --check-formatted", "credo --strict", "dialyzer", "test"]

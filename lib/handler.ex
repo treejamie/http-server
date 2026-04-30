@@ -1,5 +1,5 @@
 defmodule Server.Handler do
-  @doc """
+  @moduledoc """
   A very simple handler that takes a request string and returns a response
   """
   def handle(request) do

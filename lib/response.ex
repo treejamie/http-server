@@ -1,4 +1,7 @@
 defmodule Server.Response do
+  @moduledoc """
+  The Response struct is the central idea in the http server
+  """
   defstruct method: nil,
             path: nil,
             params: %{},

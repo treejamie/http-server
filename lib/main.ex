@@ -1,4 +1,7 @@
 defmodule Server do
+  @moduledoc """
+  The entrypoint for the main server loop.
+  """
   use Application
   require Logger
 
@@ -7,7 +10,7 @@ defmodule Server do
     Supervisor.start_link([{Task, fn -> Server.listen() end}], strategy: :one_for_one)
   end
 
-  def listen() do
+  def listen do
     {:ok, socket} = :gen_tcp.listen(4221, [:binary, active: false, reuseaddr: true])
     loop(socket)
   end
@@ -22,25 +25,29 @@ defmodule Server do
 
   defp handle_client(client_socket) do
     # this is the boundary - naive assumption checks of a perfect world.
-    with {:ok, request} <- :gen_tcp.recv(client_socket, 0) do
-      # logging - becasue reasons
-      Logger.debug("#{inspect(request)}")
+    case :gen_tcp.recv(client_socket, 0) do
+      {:ok, request} ->
+        # logging - becasue reasons
+        Logger.debug("#{inspect(request)}")
 
-      # make the respone
-      response = Server.Handler.handle(request)
+        # make the respone
+        response = Server.Handler.handle(request)
 
-      # return the reply
-      reply(response, client_socket)
+        # return the reply
+        reply(response, client_socket)
 
-      # now close or recurse
-      if response.close? do
+        # now close or recurse
+        if response.close? do
+          :gen_tcp.close(client_socket)
+        else
+          handle_client(client_socket)
+        end
+
+      {:error, :closed} ->
         :gen_tcp.close(client_socket)
-      else
-        handle_client(client_socket)
-      end
-    else
-      {:error, :closed} -> :gen_tcp.close(client_socket)
-      {:error, error} -> Logger.error("loop error: #{inspect(error)}")
+
+      {:error, error} ->
+        Logger.error("loop error: #{inspect(error)}")
     end
   end
 
