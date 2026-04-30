@@ -1,4 +1,19 @@
 defmodule Server.Response do
+  @moduledoc """
+  The Response struct is the central idea in the http server
+  """
+  @type t :: %__MODULE__{
+          method: String.t() | nil,
+          path: String.t() | nil,
+          params: map(),
+          headers: map(),
+          content_length: non_neg_integer() | nil,
+          content_type: String.t(),
+          close?: boolean(),
+          body: iodata() | nil,
+          status: non_neg_integer() | nil,
+          request_body: binary() | nil
+        }
   defstruct method: nil,
             path: nil,
             params: %{},
@@ -10,10 +25,12 @@ defmodule Server.Response do
             status: nil,
             request_body: nil
 
+  @spec full_status(__MODULE__.t()) :: String.t()
   def full_status(%__MODULE__{} = response) do
     "#{response.status} #{status_reason(response.status)}"
   end
 
+  @spec gzip?(__MODULE__.t()) :: bool
   def gzip?(%__MODULE__{} = response) do
     case Map.get(response.headers, "Content-Encoding") do
       "gzip" -> true
@@ -24,6 +41,7 @@ defmodule Server.Response do
   @doc """
   If we need to close the connection. Send the header
   """
+  @spec maybe_connection?(__MODULE__.t()) :: String.t()
   def maybe_connection?(response) do
     case response.close? do
       true -> "Connection: close\r\n"
@@ -34,6 +52,7 @@ defmodule Server.Response do
   @doc """
   If there's content encoding, show the header
   """
+  @spec maybe_content_encoding?(map()) :: String.t()
   def maybe_content_encoding?(headers) do
     case Map.get(headers, "Content-Encoding") do
       nil -> ""
@@ -55,6 +74,7 @@ defmodule Server.Response do
 end
 
 defimpl String.Chars, for: Server.Response do
+  @spec get_body(Server.Response.t()) :: String.t() | iodata()
   def get_body(response) do
     # body could be nil, so defend against taht
     body = response.body || ""
@@ -65,6 +85,7 @@ defimpl String.Chars, for: Server.Response do
     end
   end
 
+  @spec to_string(Server.Response.t()) :: String.t()
   def to_string(%Server.Response{} = response) do
     # some parts needs to be calculated
     body = get_body(response)

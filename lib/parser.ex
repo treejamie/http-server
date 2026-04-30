@@ -1,10 +1,14 @@
 defmodule Server.Parser do
+  @moduledoc """
+  Transforms a plain text HTTP request into a Response.
+  """
   alias Server.Response
 
   @supported_encodings [
     "gzip"
   ]
 
+  @spec parse(String.t()) :: Response.t()
   def parse(request) do
     # split out request body first as that's \r\n\r\n
     [request | [request_body]] = String.split(request, "\r\n\r\n")
