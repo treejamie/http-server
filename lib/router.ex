@@ -8,11 +8,9 @@ defmodule Server.Router do
   end
 
   def route(%Response{method: "POST", path: "/files/" <> filename} = response) do
-    with :ok <- Files.write_file(filename, response.request_body) do
-      %{response | status: 201}
-    else
-      {:error, _} ->
-        %{response | status: 500}
+    case Files.write_file(filename, response.request_body) do
+      :ok -> %{response | status: 201}
+      _ -> %{response | status: 500}
     end
   end
 
