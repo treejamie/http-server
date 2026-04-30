@@ -5,11 +5,13 @@ defmodule Server do
   use Application
   require Logger
 
+  @spec start(Application.start_type(), map()) :: {:error, term()} | {:ok, pid()}
   def start(_type, _args) do
     Logger.info("Starting server on http://127.0.0.1:4221")
     Supervisor.start_link([{Task, fn -> Server.listen() end}], strategy: :one_for_one)
   end
 
+  @spec listen :: ListenSocket
   def listen do
     {:ok, socket} = :gen_tcp.listen(4221, [:binary, active: false, reuseaddr: true])
     loop(socket)
@@ -57,9 +59,10 @@ defmodule Server do
     |> then(fn response -> :gen_tcp.send(client_socket, response) end)
   end
 
-  def main(args) do
-    # parse the args
-    {opts, _args, _invalid} = OptionParser.parse(args, strict: [directory: :string])
+  @spec main(Keyword.t()) :: no_return()
+  def main(opts) do
+    # parse the opts
+    {opts, _args, _invalid} = OptionParser.parse(opts, strict: [directory: :string])
     directory = Keyword.get(opts, :directory)
 
     # set the config

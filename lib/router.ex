@@ -11,6 +11,7 @@ defmodule Server.Router do
   alias Server.Files
   alias Server.Response
 
+  @spec route(Response.t()) :: Response.t()
   def route(%Response{method: "GET", path: "/"} = response) do
     %{response | status: 200}
   end

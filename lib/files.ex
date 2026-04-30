@@ -29,7 +29,7 @@ defmodule Server.Files do
     end
   end
 
-  def build_path(filename) do
+  defp build_path(filename) do
     Path.join([
       Application.get_env(:codecrafters_http_server, :directory),
       filename

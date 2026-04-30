@@ -8,6 +8,7 @@ defmodule Server.Parser do
     "gzip"
   ]
 
+  @spec parse(String.t()) :: Response.t()
   def parse(request) do
     # split out request body first as that's \r\n\r\n
     [request | [request_body]] = String.split(request, "\r\n\r\n")
